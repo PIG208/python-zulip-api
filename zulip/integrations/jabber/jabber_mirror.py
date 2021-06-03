@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 
-import os
-import signal
-import subprocess
 import sys
+import subprocess
+import os
 import traceback
+import signal
 from types import FrameType
-
 from zulip import RandomExponentialBackoff
-
 
 def die(signal: int, frame: FrameType) -> None:
     """We actually want to exit, so run os._exit (so as not to be caught and restarted)"""
     os._exit(1)
-
 
 signal.signal(signal.SIGINT, die)
 

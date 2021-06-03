@@ -5,19 +5,14 @@
 # This hook is called when changesets are pushed to the master repository (ie
 # `hg push`). See https://zulip.com/integrations for installation instructions.
 
-import sys
-
-from mercurial import repository as repo
-from mercurial import ui
-
 import zulip
+import sys
+from typing import Text
+from mercurial import ui, repository as repo
 
 VERSION = "0.9"
 
-
-def format_summary_line(
-    web_url: str, user: str, base: int, tip: int, branch: str, node: str
-) -> str:
+def format_summary_line(web_url: str, user: str, base: int, tip: int, branch: str, node: Text) -> Text:
     """
     Format the first line of the message, which contains summary
     information about the changeset and links to the changelog if a
@@ -31,18 +26,16 @@ def format_summary_line(
     if web_url:
         shortlog_base_url = web_url.rstrip("/") + "/shortlog/"
         summary_url = "{shortlog}{tip}?revcount={revcount}".format(
-            shortlog=shortlog_base_url, tip=tip - 1, revcount=revcount
-        )
+            shortlog=shortlog_base_url, tip=tip - 1, revcount=revcount)
         formatted_commit_count = "[{revcount} commit{s}]({url})".format(
-            revcount=revcount, s=plural, url=summary_url
-        )
+            revcount=revcount, s=plural, url=summary_url)
     else:
-        formatted_commit_count = f"{revcount} commit{plural}"
+        formatted_commit_count = "{revcount} commit{s}".format(
+            revcount=revcount, s=plural)
 
     return "**{user}** pushed {commits} to **{branch}** (`{tip}:{node}`):\n\n".format(
-        user=user, commits=formatted_commit_count, branch=branch, tip=tip, node=node[:12]
-    )
-
+        user=user, commits=formatted_commit_count, branch=branch, tip=tip,
+        node=node[:12])
 
 def format_commit_lines(web_url: str, repo: repo, base: int, tip: int) -> str:
     """
@@ -60,25 +53,23 @@ def format_commit_lines(web_url: str, repo: repo, base: int, tip: int) -> str:
 
         if web_url:
             summary_url = rev_base_url + str(rev_ctx)
-            summary = f"* [{one_liner}]({summary_url})"
+            summary = "* [{summary}]({url})".format(
+                summary=one_liner, url=summary_url)
         else:
-            summary = f"* {one_liner}"
+            summary = "* {summary}".format(summary=one_liner)
 
         commit_summaries.append(summary)
 
     return "\n".join(summary for summary in commit_summaries)
 
-
-def send_zulip(
-    email: str, api_key: str, site: str, stream: str, subject: str, content: str
-) -> None:
+def send_zulip(email: str, api_key: str, site: str, stream: str, subject: str, content: Text) -> None:
     """
     Send a message to Zulip using the provided credentials, which should be for
     a bot in most cases.
     """
-    client = zulip.Client(
-        email=email, api_key=api_key, site=site, client="ZulipMercurial/" + VERSION
-    )
+    client = zulip.Client(email=email, api_key=api_key,
+                          site=site,
+                          client="ZulipMercurial/" + VERSION)
 
     message_data = {
         "type": "stream",
@@ -89,27 +80,25 @@ def send_zulip(
 
     client.send_message(message_data)
 
-
 def get_config(ui: ui, item: str) -> str:
     try:
         # config returns configuration value.
-        return ui.config("zulip", item)
+        return ui.config('zulip', item)
     except IndexError:
-        ui.warn(f"Zulip: Could not find required item {item} in hg config.")
+        ui.warn("Zulip: Could not find required item {} in hg config.".format(item))
         sys.exit(1)
 
-
-def hook(ui: ui, repo: repo, **kwargs: str) -> None:
+def hook(ui: ui, repo: repo, **kwargs: Text) -> None:
     """
     Invoked by configuring a [hook] entry in .hg/hgrc.
     """
     hooktype = kwargs["hooktype"]
     node = kwargs["node"]
 
-    ui.debug(f"Zulip: received {hooktype} event\n")
+    ui.debug("Zulip: received {hooktype} event\n".format(hooktype=hooktype))
 
     if hooktype != "changegroup":
-        ui.warn(f"Zulip: {hooktype} not supported\n")
+        ui.warn("Zulip: {hooktype} not supported\n".format(hooktype=hooktype))
         sys.exit(1)
 
     ctx = repo[node]
@@ -123,14 +112,14 @@ def hook(ui: ui, repo: repo, **kwargs: str) -> None:
         # Only send notifications on branches we are watching.
         watched_branches = [b.lower().strip() for b in branch_whitelist.split(",")]
         if branch.lower() not in watched_branches:
-            ui.debug(f"Zulip: ignoring event for {branch}\n")
+            ui.debug("Zulip: ignoring event for {branch}\n".format(branch=branch))
             sys.exit(0)
 
     if branch_blacklist:
         # Don't send notifications for branches we've ignored.
         ignored_branches = [b.lower().strip() for b in branch_blacklist.split(",")]
         if branch.lower() in ignored_branches:
-            ui.debug(f"Zulip: ignoring event for {branch}\n")
+            ui.debug("Zulip: ignoring event for {branch}\n".format(branch=branch))
             sys.exit(0)
 
     # The first and final commits in the changeset.

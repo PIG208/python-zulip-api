@@ -3,11 +3,13 @@ for extract.py
 """
 
 from json.decoder import JSONDecodeError
+from typing import Text
 
-from zulip_bots.bots.monkeytestit.lib import extract, report
+from zulip_bots.bots.monkeytestit.lib import extract
+from zulip_bots.bots.monkeytestit.lib import report
 
 
-def execute(message: str, apikey: str) -> str:
+def execute(message: Text, apikey: Text) -> Text:
     """Parses message and returns a dictionary
 
     :param message: The message
@@ -22,18 +24,12 @@ def execute(message: str, apikey: str) -> str:
         len_params = len(params)
 
         if len_params < 2:
-            return failed("You **must** provide at least an URL to perform a " "check.")
+            return failed("You **must** provide at least an URL to perform a "
+                          "check.")
 
-        options = {
-            "secret": apikey,
-            "url": params[1],
-            "on_load": "true",
-            "on_click": "true",
-            "page_weight": "true",
-            "seo": "true",
-            "broken_links": "true",
-            "asset_count": "true",
-        }
+        options = {"secret": apikey, "url": params[1], "on_load": "true",
+                   "on_click": "true", "page_weight": "true", "seo": "true",
+                   "broken_links": "true", "asset_count": "true"}
 
         # Set the options only if supplied
 
@@ -53,11 +49,9 @@ def execute(message: str, apikey: str) -> str:
         try:
             fetch_result = extract.fetch(options)
         except JSONDecodeError:
-            return failed(
-                "Cannot decode a JSON response. "
-                "Perhaps faulty link. Link must start "
-                "with `http://` or `https://`."
-            )
+            return failed("Cannot decode a JSON response. "
+                          "Perhaps faulty link. Link must start "
+                          "with `http://` or `https://`.")
 
         return report.compose(fetch_result)
 
@@ -65,10 +59,11 @@ def execute(message: str, apikey: str) -> str:
         # the user needs to modify the asset_count. There are probably ways
         # to counteract this, but I think this is more fast to run.
     else:
-        return "Unknown command. Available commands: `check <website> " "[params]`"
+        return "Unknown command. Available commands: `check <website> " \
+               "[params]`"
 
 
-def failed(message: str) -> str:
+def failed(message: Text) -> Text:
     """Simply attaches a failed marker to a message
 
     :param message: The message

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
+import sys
+import os
+import logging
 import argparse
 import json
-import logging
-import os
-import sys
 import unicodedata
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "api"))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'api'))
 import zulip
-
 
 def write_public_streams() -> None:
     public_streams = set()
@@ -17,22 +16,9 @@ def write_public_streams() -> None:
         # Zephyr class names are canonicalized by first applying NFKC
         # normalization and then lower-casing server-side
         canonical_cls = unicodedata.normalize("NFKC", stream_name).lower()
-        if canonical_cls in [
-            "security",
-            "login",
-            "network",
-            "ops",
-            "user_locate",
-            "mit",
-            "moof",
-            "wsmonitor",
-            "wg_ctl",
-            "winlogger",
-            "hm_ctl",
-            "hm_stat",
-            "zephyr_admin",
-            "zephyr_ctl",
-        ]:
+        if canonical_cls in ['security', 'login', 'network', 'ops', 'user_locate',
+                             'mit', 'moof', 'wsmonitor', 'wg_ctl', 'winlogger',
+                             'hm_ctl', 'hm_stat', 'zephyr_admin', 'zephyr_ctl']:
             # These zephyr classes cannot be subscribed to by us, due
             # to MIT's Zephyr access control settings
             continue
@@ -42,7 +28,6 @@ def write_public_streams() -> None:
     with open("/home/zulip/public_streams.tmp", "w") as f:
         f.write(json.dumps(list(public_streams)) + "\n")
     os.rename("/home/zulip/public_streams.tmp", "/home/zulip/public_streams")
-
 
 if __name__ == "__main__":
     log_file = "/home/zulip/sync_public_streams.log"
@@ -97,7 +82,9 @@ if __name__ == "__main__":
                 last_event_id = max(last_event_id, event["id"])
                 if event["type"] == "stream":
                     if event["op"] == "create":
-                        stream_names.update(stream["name"] for stream in event["streams"])
+                        stream_names.update(
+                            stream["name"] for stream in event["streams"]
+                        )
                         write_public_streams()
                     elif event["op"] == "delete":
                         stream_names.difference_update(

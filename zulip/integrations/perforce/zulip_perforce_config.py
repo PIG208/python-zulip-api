@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Text
 
 # Change these values to configure authentication for the plugin
 ZULIP_USER = "p4-bot@example.com"
@@ -28,8 +28,8 @@ P4_WEB: Optional[str] = None
 # "master-plan" and "secret" subdirectories of //depot/ to:
 # * stream "depot_subdirectory-commits"
 # * subject "change_root"
-def commit_notice_destination(path: str, changelist: int) -> Optional[Dict[str, str]]:
-    dirs = path.split("/")
+def commit_notice_destination(path: Text, changelist: int) -> Optional[Dict[Text, Text]]:
+    dirs = path.split('/')
     if len(dirs) >= 4 and dirs[3] not in ("*", "..."):
         directory = dirs[3]
     else:
@@ -37,11 +37,11 @@ def commit_notice_destination(path: str, changelist: int) -> Optional[Dict[str, 
         directory = dirs[2]
 
     if directory not in ["evil-master-plan", "my-super-secret-repository"]:
-        return dict(stream=f"{directory}-commits", subject=path)
+        return dict(stream  = "%s-commits" % (directory,),
+                    subject = path)
 
     # Return None for cases where you don't want a notice sent
     return None
-
 
 ## If properly installed, the Zulip API should be in your import
 ## path, but if not, set a custom path below
